@@ -61,16 +61,20 @@ let wrap_open fn file =
     exit 1
 
 let make_lexer source_kind source =
-  match source_kind, source with
-  | `String, _ ->
-      Location.input_name := "//toplevel//";
-      Lexing.from_string source
-  | `Path, "-" ->
-      Location.input_name := "//toplevel//";
-      Lexing.from_channel stdin
-  | `Path, _ ->
-      Location.input_name := source;
-      Lexing.from_channel (wrap_open open_in source)
+  let (input_name, lexer) =
+    match source_kind, source with
+    | `String, _ ->
+        Location.input_name := "//toplevel//";
+        ("//toplevel//", Lexing.from_string source)
+    | `Path, "-" ->
+        Location.input_name := "//toplevel//";
+        ("//toplevel//", Lexing.from_channel stdin)
+    | `Path, _ ->
+        Location.input_name := source;
+        (source, Lexing.from_channel (wrap_open open_in source))
+  in
+  Location.init lexer input_name;
+  lexer
 
 let () =
   Arg.parse args anon_arg usage_msg;
